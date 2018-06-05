@@ -27,9 +27,10 @@ defmodule BrodEx.Client do
     quote bind_quoted: [use_opts: use_opts] do
       @behaviour BrodEx.Client
       @otp_app Keyword.fetch!(use_opts, :otp_app)
+      @config Application.get_env(@otp_app, __MODULE__, [])
 
       def start_link(opts \\ []) do
-        client_config = Application.get_env(@otp_app, __MODULE__, [])
+        client_config = @config
                         |> Keyword.merge(opts)
                         |> BrodEx.Config.brod_client_config()
         clients = Application.get_env(:brod, :clients, [])
@@ -48,8 +49,56 @@ defmodule BrodEx.Client do
         }
       end
 
+      def endpoints do
+        @config[:endpoints]
+      end
+
+      def produce(value) do
+        BrodEx.produce(__MODULE__, value)
+      end
+
+      def produce(key, value) do
+        BrodEx.produce(__MODULE__, key, value)
+      end
+
+      def produce(topic, partition, key, value) do
+        BrodEx.produce(__MODULE__, topic, partition, key, value)
+      end
+
+      def produce_sync(key, value) do
+        BrodEx.produce_sync(__MODULE__, key, value)
+      end
+
       def produce_sync(topic, partition, key, value) do
         BrodEx.produce_sync(__MODULE__, topic, partition, key, value)
+      end
+
+      def consume_ack(topic, partition, offset) do
+        BrodEx.consume_ack(__MODULE__, topic, partition, offset)
+      end
+
+      def metadata(topic) do
+        :brod_client.get_metadata(__MODULE__, topic)
+      end
+
+      def partitions_count(topic) do
+        :brod_client.get_partitions_count(__MODULE__, topic)
+      end
+
+      def resolve_offset(topic, partition) do
+        BrodEx.resolve_offset(endpoints(), topic, partition)
+      end
+
+      def resolve_offset(topic, partition, time) do
+        BrodEx.resolve_offset(endpoints(), topic, partition, time)
+      end
+
+      def fetch(topic, partition, offset) do
+        BrodEx.fetch(endpoints(), topic, partition, offset)
+      end
+
+      def fetch(topic, partition, offset, max_wait_time, min_bytes, max_bytes) do
+        BrodEx.fetch(endpoints(), topic, partition, offset, max_wait_time, min_bytes, max_bytes)
       end
 
       defoverridable child_spec: 1
