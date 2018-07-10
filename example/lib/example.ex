@@ -3,7 +3,13 @@ defmodule Example do
 
   def start(_type, _args) do
     children = [
-      Example.BrodClient
+      Example.BrodClient,
+      {BrodEx.CoordinatedConsumerGroup,
+        client: Example.BrodClient,
+        id: "test-8.consumer",
+        topics: ["test-8"],
+        handler: Example.TestHandler
+      }
     ]
 
     opts = [strategy: :one_for_one, name: Example.Supervisor]
